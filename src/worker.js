@@ -606,7 +606,7 @@ export default {
         }
 
         .control-btn.play-pause {
-            background: var(--color-brand-primary);
+            background: #2763ff;
             color: var(--color-text-on-brand);
             width: 32px;
             height: 32px;
