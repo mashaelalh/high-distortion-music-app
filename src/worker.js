@@ -729,6 +729,7 @@ export default {
     </style>
 </head>
 <body>
+    <audio src="" id="audio" crossOrigin="anonymous"></audio>
     <div class="app-layout">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -983,14 +984,7 @@ export default {
 
     <script>
         // Music app data and functionality
-        const tracks = [
-            { title: "Midnight City", artist: "M83", duration: "4:03", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=40&h=40&fit=crop" },
-            { title: "Somebody Told Me", artist: "The Killers", duration: "3:17", cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=40&h=40&fit=crop" },
-            { title: "Electric Feel", artist: "MGMT", duration: "3:49", cover: "https://images.unsplash.com/photo-1518972358870-2e8d8cd8bd3a?w=40&h=40&fit=crop" },
-            { title: "Take Me Out", artist: "Franz Ferdinand", duration: "3:57", cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=40&h=40&fit=crop" },
-            { title: "Pumped Up Kicks", artist: "Foster the People", duration: "3:59", cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=40&h=40&fit=crop" },
-            { title: "Seven Nation Army", artist: "The White Stripes", duration: "3:51", cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=40&h=40&fit=crop" }
-        ];
+        const tracks = JSON.parse(await env.music.get("music-data.json"));
 
         let currentTrack = 0;
         let isPlaying = true;
@@ -1004,6 +998,7 @@ export default {
         const playerThumbnail = document.querySelector('.player-thumbnail');
         const trackTitle = document.querySelector('.track-title');
         const trackArtist = document.querySelector('.track-artist');
+        const audio = document.getElementById('audio');
 
         // Initialize animations
         function initAnimations() {
@@ -1021,9 +1016,10 @@ export default {
             const track = tracks[trackIndex];
             if (track) {
                 playerThumbnail.src = track.cover;
-                playerThumbnail.alt = \`Now Playing: \${track.title}\`;
+                playerThumbnail.alt = `Now Playing: ${track.title}`;
                 trackTitle.textContent = track.title;
                 trackArtist.textContent = track.artist;
+                audio.src = track.url; // Placeholder URL
                 
                 // Update active song
                 songItems.forEach((item, index) => {
@@ -1045,11 +1041,13 @@ export default {
                 icon.className = 'fas fa-pause';
                 playBtnIcon.className = 'fas fa-pause';
                 playBtn.innerHTML = '<i class="fas fa-pause"></i>Pause';
+                audio.play();
                 startProgress();
             } else {
                 icon.className = 'fas fa-play';
                 playBtnIcon.className = 'fas fa-play';
                 playBtn.innerHTML = '<i class="fas fa-play"></i>Play All';
+                audio.pause();
                 stopProgress();
             }
         }
@@ -1178,9 +1176,49 @@ export default {
 
         // Analytics tracking (placeholder)
         function trackEvent(action, label) {
-            console.log(\`Analytics: \${action} - \${label}\`);
+            console.log(`Analytics: ${action} - ${label}`);
             // Future: Implement analytics
         }
+
+        // Music visualizer
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let audioContext;
+        let analyser;
+        let source;
+        let fbcArray;
+
+        function initVisualizer() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            source = audioContext.createMediaElementSource(document.querySelector('audio'));
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            analyser.fftSize = 256;
+            fbcArray = new Uint8Array(analyser.frequencyBinCount);
+            renderFrame();
+        }
+
+        function renderFrame() {
+            window.requestAnimationFrame(renderFrame);
+            analyser.getByteFrequencyData(fbcArray);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FF2763';
+            const bars = 100;
+            for (let i = 0; i < bars; i++) {
+                const barX = i * 3;
+                const barWidth = 2;
+                const barHeight = -(fbcArray[i] / 2);
+                ctx.fillRect(barX, canvas.height, barWidth, barHeight);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initVisualizer();
+        });
 
         // Track user interactions
         playPauseBtn.addEventListener('click', () => trackEvent('play_pause', isPlaying ? 'pause' : 'play'));
@@ -1188,7 +1226,8 @@ export default {
             item.addEventListener('click', () => trackEvent('track_select', tracks[index].title));
         });
     </script>
-</body>
+        <canvas id="visualizer"></canvas>
+    </body>
 </html>`;
 
     return new Response(html, {
