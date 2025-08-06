@@ -1016,7 +1016,7 @@ export default {
             const track = tracks[trackIndex];
             if (track) {
                 playerThumbnail.src = track.cover;
-                playerThumbnail.alt = `Now Playing: ${track.title}`;
+                playerThumbnail.alt = "Now Playing: " + track.title;
                 trackTitle.textContent = track.title;
                 trackArtist.textContent = track.artist;
                 audio.src = track.url; // Placeholder URL
@@ -1176,7 +1176,7 @@ export default {
 
         // Analytics tracking (placeholder)
         function trackEvent(action, label) {
-            console.log(`Analytics: ${action} - ${label}`);
+            console.log("Analytics: " + action + " - " + label);
             // Future: Implement analytics
         }
 
